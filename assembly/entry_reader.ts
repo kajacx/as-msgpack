@@ -1,9 +1,8 @@
 import { DataReader } from "./datareader";
-import { Format } from "./format";
-import { E_INVALIDLENGTH } from "util/error";
 
-export class SizedReader {
+export class EntryReader {
   private reader: DataReader;
+  private nextEntry: Entry | null;
 
   constructor(reader: DataReader) {
     this.reader = reader;
@@ -142,6 +141,62 @@ export abstract class Entry {
     }
   }
 
+  isFloat(): bool {
+    return false;
+  }
+
+  tryReadFloat(): f64 {
+    throw new Error("Entry is not a float: " + this);
+  }
+
+  readFloat(): f64 {
+    try {
+      return this.tryReadFloat();
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  isNull(): bool {
+    return false;
+  }
+
+  isUnused(): bool {
+    return false;
+  }
+
+  isBool(): bool {
+    return false;
+  }
+
+  tryReadBool(): bool {
+    throw new Error("Entry is not a bool: " + this);
+  }
+
+  readBool(): bool {
+    try {
+      return this.readBool();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  isString(): bool {
+    return false;
+  }
+
+  tryReadString(): string {
+    throw new Error("Entry is not a string: " + this);
+  }
+
+  readString(): string {
+    try {
+      return this.tryReadString();
+    } catch (_) {
+      return "";
+    }
+  }
+
   isMapLength(): bool {
     return false;
   }
@@ -171,30 +226,6 @@ export abstract class Entry {
       return this.readArrayLength();
     } catch (_) {
       return 0;
-    }
-  }
-
-  isNull(): bool {
-    return false;
-  }
-
-  isUnused(): bool {
-    return false;
-  }
-
-  isBool(): bool {
-    return false;
-  }
-
-  tryReadBool(): bool {
-    throw new Error("Entry is not bool: " + this);
-  }
-
-  readBool(): bool {
-    try {
-      return this.readBool();
-    } catch (_) {
-      return false;
     }
   }
 
@@ -248,6 +279,30 @@ class Int extends Entry {
     super();
     this.value = value;
   }
+
+  isInt(strict?: bool): bool {
+    return true;
+  }
+
+  tryReadInt(strict?: bool): i64 {
+    return this.value;
+  }
+
+  isUint(strict?: bool): bool {
+    return !strict && this.value >= 0;
+  }
+
+  tryReadUint(strict?: bool): u64 {
+    if (strict) {
+      throw new Error("Trying to read uint from an int in strict mode");
+    } else if (this.value < 0) {
+      throw new Error(
+        "Trying to read uint from a negative in, value is: " + this.value
+      );
+    } else {
+      return this.value as u64;
+    }
+  }
 }
 
 class UInt extends Entry {
@@ -256,6 +311,30 @@ class UInt extends Entry {
   constructor(value: u64) {
     super();
     this.value = value;
+  }
+
+  isInt(strict?: bool): bool {
+    return !strict && this.value <= (i64.MAX_VALUE as u64);
+  }
+
+  tryReadInt(strict?: bool): i64 {
+    if (strict) {
+      throw new Error("Trying to read int from a uint in strict mode");
+    } else if (this.value > (i64.MAX_VALUE as u64)) {
+      throw new Error(
+        "Trying to read int from too large uint, value is: " + this.value
+      );
+    } else {
+      return this.value as i64;
+    }
+  }
+
+  isUint(strict?: bool): bool {
+    return true;
+  }
+
+  tryReadUint(strict?: bool): u64 {
+    return this.value;
   }
 }
 
@@ -266,6 +345,14 @@ class Float extends Entry {
     super();
     this.value = value;
   }
+
+  isFloat(): bool {
+    return true;
+  }
+
+  tryReadFloat(): f64 {
+    return this.value;
+  }
 }
 
 class Bool extends Entry {
@@ -275,11 +362,27 @@ class Bool extends Entry {
     super();
     this.value = value;
   }
+
+  isBool(): bool {
+    return true;
+  }
+
+  tryReadBool(): bool {
+    return this.value;
+  }
 }
 
-class Null extends Entry {}
+class Null extends Entry {
+  isNull(): bool {
+    return true;
+  }
+}
 
-class Unused extends Entry {}
+class Unused extends Entry {
+  isUnused(): bool {
+    return true;
+  }
+}
 
 class Str extends Entry {
   text: string;
@@ -287,6 +390,14 @@ class Str extends Entry {
   constructor(text: string) {
     super();
     this.text = text;
+  }
+
+  isString(): bool {
+    return true;
+  }
+
+  tryReadString(): string {
+    return this.text;
   }
 }
 
@@ -297,6 +408,14 @@ class MapLength extends Entry {
     super();
     this.length = length;
   }
+
+  isMapLength(): bool {
+    return true;
+  }
+
+  tryReadMapLength(): usize {
+    return this.length;
+  }
 }
 
 class ArrayLength extends Entry {
@@ -306,6 +425,14 @@ class ArrayLength extends Entry {
     super();
     this.length = length;
   }
+
+  isArrayLength(): bool {
+    return true;
+  }
+
+  tryReadArrayLength(): usize {
+    return this.length;
+  }
 }
 
 class BinData extends Entry {
@@ -314,6 +441,14 @@ class BinData extends Entry {
   constructor(data: ArrayBuffer) {
     super();
     this.data = data;
+  }
+
+  isBinData(): bool {
+    return true;
+  }
+
+  tryReadBinData(): ArrayBuffer {
+    return this.data;
   }
 }
 
@@ -325,5 +460,13 @@ class ExtData extends Entry {
     super();
     this.type = type;
     this.data = data;
+  }
+
+  isExt(): bool {
+    return true;
+  }
+
+  tryReadExt(): ExtensionData {
+    return new ExtensionData(this.type, this.data);
   }
 }
