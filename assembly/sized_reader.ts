@@ -13,18 +13,99 @@ export class SizedReader {
     const marker = this.reader.getUint8();
     // Fix int:   0b1xxxxxx
     if (marker < 0b1000000) {
-      return new FixInt(marker);
+      return new Int(marker as i64);
       // Fix map:       0b1000xxxx
     } else if (marker < 0b10010000) {
-      return new FixMap(marker & 0b00001111);
+      return new MapLength((marker & 0b00001111) as usize);
       // Fix array:     0b1001xxxx
     } else if (marker < 0b10100000) {
-      return new FixArr(marker & 0b00001111);
-      return new FixStr(marker & 0b00001111);
+      return new ArrayLength((marker & 0b00001111) as usize);
+      // Fix string:    0b101xxxxx
+    } else if (marker < 0b11000000) {
+      return new Str(this.readString((marker & 0x00011111) as usize));
     } else if (marker == 0b11000000) {
       return new Null();
-      // } else if (marker == 0b110)
+    } else if (marker == 0b11000001) {
+      return new Unused();
+    } else if (marker == 0b11000010) {
+      return new Bool(false);
+    } else if (marker == 0b11000011) {
+      return new Bool(true);
+    } else if (marker == 0b11000100) {
+      return new BinData(this.readBinData(this.reader.getUint8() as usize));
+    } else if (marker == 0b11000101) {
+      return new BinData(this.readBinData(this.reader.getUint16() as usize));
+    } else if (marker == 0b11000110) {
+      return new BinData(this.readBinData(this.reader.getUint32() as usize));
+    } else if (marker == 0b10100111) {
+      let length = this.reader.getUint8() as usize;
+      let type = this.reader.getUint8();
+      return new ExtData(type, this.readBinData(length));
+    } else if (marker == 0b10101000) {
+      let length = this.reader.getUint16() as usize;
+      let type = this.reader.getUint8();
+      return new ExtData(type, this.readBinData(length));
+    } else if (marker == 0b10101001) {
+      let length = this.reader.getUint32() as usize;
+      let type = this.reader.getUint8();
+      return new ExtData(type, this.readBinData(length));
+    } else if (marker == 0b10101010) {
+      return new Float(this.reader.getFloat32() as f64);
+    } else if (marker == 0b10101011) {
+      return new Float(this.reader.getFloat64());
+    } else if (marker == 0b10101100) {
+      return new UInt(this.reader.getUint8() as u64);
+    } else if (marker == 0b10101101) {
+      return new UInt(this.reader.getUint16() as u64);
+    } else if (marker == 0b10101110) {
+      return new UInt(this.reader.getUint32() as u64);
+    } else if (marker == 0b10101111) {
+      return new UInt(this.reader.getUint64());
+    } else if (marker == 0b10110000) {
+      return new Int(this.reader.getInt8() as i64);
+    } else if (marker == 0b10110001) {
+      return new Int(this.reader.getInt16() as i64);
+    } else if (marker == 0b10110010) {
+      return new Int(this.reader.getInt32() as i64);
+    } else if (marker == 0b10110011) {
+      return new Int(this.reader.getInt64());
+    } else if (marker == 0b10110100) {
+      return new ExtData(this.reader.getUint8(), this.readBinData(1));
+    } else if (marker == 0b10110101) {
+      return new ExtData(this.reader.getUint8(), this.readBinData(2));
+    } else if (marker == 0b10110110) {
+      return new ExtData(this.reader.getUint8(), this.readBinData(4));
+    } else if (marker == 0b10110111) {
+      return new ExtData(this.reader.getUint8(), this.readBinData(8));
+    } else if (marker == 0b10111000) {
+      return new ExtData(this.reader.getUint8(), this.readBinData(16));
+    } else if (marker == 0b10111001) {
+      return new Str(this.readString(this.reader.getUint8() as usize));
+    } else if (marker == 0b10111010) {
+      return new Str(this.readString(this.reader.getUint16() as usize));
+    } else if (marker == 0b10111011) {
+      return new Str(this.readString(this.reader.getUint32() as usize));
+    } else if (marker == 0b10111100) {
+      return new ArrayLength(this.reader.getUint16() as usize);
+    } else if (marker == 0b10111101) {
+      return new ArrayLength(this.reader.getUint32() as usize);
+    } else if (marker == 0b10111110) {
+      return new MapLength(this.reader.getUint16() as usize);
+    } else if (marker == 0b10111111) {
+      return new MapLength(this.reader.getUint32() as usize);
+    } else if (marker < 256) {
+      return new Int(marker as i8 as i64);
+    } else {
+      throw new Error("Unrecognized marker: " + marker);
     }
+  }
+
+  private readString(length: usize): string {
+    return String.UTF8.decode(this.reader.getBytes(length));
+  }
+
+  private readBinData(length: usize): ArrayBuffer {
+    return this.reader.getBytes(length);
   }
 }
 
@@ -97,6 +178,10 @@ export abstract class Entry {
     return false;
   }
 
+  isUnused(): bool {
+    return false;
+  }
+
   isBool(): bool {
     return false;
   }
@@ -117,15 +202,15 @@ export abstract class Entry {
     return false;
   }
 
-  tryReadBinData(): Uint8Array {
+  tryReadBinData(): ArrayBuffer {
     throw new Error("Entry is not bin data: " + this);
   }
 
-  readBinData(): Uint8Array {
+  readBinData(): ArrayBuffer {
     try {
       return this.tryReadBinData();
     } catch (_) {
-      return new Uint8Array(0);
+      return new ArrayBuffer(0);
     }
   }
 
@@ -141,22 +226,31 @@ export abstract class Entry {
     try {
       return this.tryReadExt();
     } catch (_) {
-      return new ExtensionData(0, new Uint8Array(0));
+      return new ExtensionData(0, new ArrayBuffer(0));
     }
   }
 }
 
 export class ExtensionData {
   type: u8;
-  data: Uint8Array;
+  data: ArrayBuffer;
 
-  constructor(type: u8, data: Uint8Array) {
+  constructor(type: u8, data: ArrayBuffer) {
     this.type = type;
     this.data = data;
   }
 }
 
 class Int extends Entry {
+  value: i64;
+
+  constructor(value: i64) {
+    super();
+    this.value = value;
+  }
+}
+
+class UInt extends Entry {
   value: u64;
 
   constructor(value: u64) {
@@ -164,8 +258,6 @@ class Int extends Entry {
     this.value = value;
   }
 }
-
-class UInt extends Entry {}
 
 class Float extends Entry {
   value: f64;
@@ -175,6 +267,29 @@ class Float extends Entry {
     this.value = value;
   }
 }
+
+class Bool extends Entry {
+  value: bool;
+
+  constructor(value: bool) {
+    super();
+    this.value = value;
+  }
+}
+
+class Null extends Entry {}
+
+class Unused extends Entry {}
+
+class Str extends Entry {
+  text: string;
+
+  constructor(text: string) {
+    super();
+    this.text = text;
+  }
+}
+
 class MapLength extends Entry {
   length: usize;
 
@@ -193,21 +308,22 @@ class ArrayLength extends Entry {
   }
 }
 
-class Str extends Entry {
-  text: string;
+class BinData extends Entry {
+  data: ArrayBuffer;
 
-  constructor(text: string) {
+  constructor(data: ArrayBuffer) {
     super();
-    this.text = text;
+    this.data = data;
   }
 }
 
-class Null extends Entry {}
+class ExtData extends Entry {
+  type: u8;
+  data: ArrayBuffer;
 
-class Unused extends Entry {}
-
-class Bool extends Entry {}
-
-class BinData extends Entry {}
-
-class Ext extends Entry {}
+  constructor(type: u8, data: ArrayBuffer) {
+    super();
+    this.type = type;
+    this.data = data;
+  }
+}
