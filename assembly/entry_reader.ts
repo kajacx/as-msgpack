@@ -2,15 +2,37 @@ import { DataReader } from "./datareader";
 
 export class EntryReader {
   private reader: DataReader;
-  private nextEntry: Entry | null;
+  private peekedEntry: Entry | null;
 
   constructor(reader: DataReader) {
     this.reader = reader;
+    this.peekedEntry = null;
   }
 
-  nextEntry(): Entry {
+  peek(): Entry | null {
+    if (this.peekedEntry == null) {
+      this.peekedEntry = this.readNextEntry();
+    }
+    return this.peekedEntry;
+  }
+
+  nextEntry(): Entry | null {
+    if (this.peekedEntry != null) {
+      const entry = this.peekedEntry;
+      this.peekedEntry = null;
+      return entry;
+    } else {
+      return this.readNextEntry();
+    }
+  }
+
+  private readNextEntry(): Entry | null {
     const marker = this.reader.getUint8();
-    // Fix int:   0b1xxxxxx
+    if (this.reader.error() instanceof RangeError) {
+      return null;
+    }
+
+    // Fix int:  0b1xxxxxx
     if (marker < 0b1000000) {
       return new Int(marker as i64);
       // Fix map:       0b1000xxxx
