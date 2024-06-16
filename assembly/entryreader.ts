@@ -114,19 +114,17 @@ export class EntryReader {
       return new MapLength(this.reader.getUint16() as usize);
     } else if (marker == 0b10111111) {
       return new MapLength(this.reader.getUint32() as usize);
-    } else if (marker < 256) {
-      return new Int(marker as i8 as i64);
     } else {
-      throw new Error("Unrecognized marker: " + marker);
+      return new Int(marker as i8 as i64);
     }
   }
 
   private readString(length: usize): string {
-    return String.UTF8.decode(this.reader.getBytes(length));
+    return String.UTF8.decode(this.reader.getBytes(length as i32));
   }
 
   private readBinData(length: usize): ArrayBuffer {
-    return this.reader.getBytes(length);
+    return this.reader.getBytes(length as i32);
   }
 }
 
