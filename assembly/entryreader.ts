@@ -1,4 +1,5 @@
 import { DataReader } from "./datareader";
+import { Option } from "./option";
 
 export class EntryReader {
   private reader: DataReader;
@@ -133,48 +134,36 @@ export abstract class Entry {
     return false;
   }
 
-  tryReadInt(strict?: bool): i64 {
-    throw new Error("Entry is not an int: " + this);
+  tryReadInt(_strict?: bool): Option<i64> {
+    return Option.None();
   }
 
   readInt(strict?: bool): i64 {
-    try {
-      return this.tryReadInt(strict);
-    } catch (_) {
-      return 0;
-    }
+    return this.tryReadInt(strict).getOr(0);
   }
 
-  isUint(strict?: bool): bool {
+  isUint(_strict?: bool): bool {
     return false;
   }
 
-  tryReadUint(strict?: bool): u64 {
-    throw new Error("Entry is not an uint: " + this);
+  tryReadUint(_strict?: bool): Option<u64> {
+    return Option.None();
   }
 
   readUint(strict?: bool): u64 {
-    try {
-      return this.tryReadUint(strict);
-    } catch (_) {
-      return 0;
-    }
+    return this.tryReadUint(strict).getOr(0);
   }
 
   isFloat(): bool {
     return false;
   }
 
-  tryReadFloat(): f64 {
-    throw new Error("Entry is not a float: " + this);
+  tryReadFloat(): Option<f64> {
+    return Option.None();
   }
 
   readFloat(): f64 {
-    try {
-      return this.tryReadFloat();
-    } catch (_) {
-      return 0;
-    }
+    return this.tryReadFloat().getOr(0);
   }
 
   isNull(): bool {
@@ -189,96 +178,72 @@ export abstract class Entry {
     return false;
   }
 
-  tryReadBool(): bool {
-    throw new Error("Entry is not a bool: " + this);
+  tryReadBool(): Option<bool> {
+    return Option.None();
   }
 
   readBool(): bool {
-    try {
-      return this.readBool();
-    } catch (_) {
-      return false;
-    }
+    return this.tryReadBool().getOr(false);
   }
 
   isString(): bool {
     return false;
   }
 
-  tryReadString(): string {
-    throw new Error("Entry is not a string: " + this);
+  tryReadString(): Option<string> {
+    return Option.None();
   }
 
   readString(): string {
-    try {
-      return this.tryReadString();
-    } catch (_) {
-      return "";
-    }
+    return this.tryReadString().getOr("");
   }
 
   isMapLength(): bool {
     return false;
   }
 
-  tryReadMapLength(): usize {
-    throw new Error("Entry is not a map length: " + this);
+  tryReadMapLength(): Option<usize> {
+    return Option.None();
   }
 
   readMapLength(): usize {
-    try {
-      return this.readMapLength();
-    } catch (_) {
-      return 0;
-    }
+    return this.tryReadMapLength().getOr(0);
   }
 
   isArrayLength(): bool {
     return false;
   }
 
-  tryReadArrayLength(): usize {
-    throw new Error("Entry is not an array length: " + this);
+  tryReadArrayLength(): Option<usize> {
+    return Option.None();
   }
 
   readArrayLength(): usize {
-    try {
-      return this.readArrayLength();
-    } catch (_) {
-      return 0;
-    }
+    return this.tryReadArrayLength().getOr(0);
   }
 
   isBinData(): bool {
     return false;
   }
 
-  tryReadBinData(): ArrayBuffer {
-    throw new Error("Entry is not bin data: " + this);
+  tryReadBinData(): Option<ArrayBuffer> {
+    return Option.None();
   }
 
   readBinData(): ArrayBuffer {
-    try {
-      return this.tryReadBinData();
-    } catch (_) {
-      return new ArrayBuffer(0);
-    }
+    return this.tryReadBinData().getOr(new ArrayBuffer(0));
   }
 
   isExt(): bool {
     return false;
   }
 
-  tryReadExt(): ExtensionData {
-    throw new Error("Entry is not bin data: " + this);
+  tryReadExt(): Option<ExtensionData> {
+    return Option.None();
   }
 
   readExt(): ExtensionData {
-    try {
-      return this.tryReadExt();
-    } catch (_) {
-      return new ExtensionData(0, new ArrayBuffer(0));
-    }
+    return this.tryReadExt().getOr(new ExtensionData(0, new ArrayBuffer(0)));
   }
 }
 
@@ -304,23 +269,19 @@ class Int extends Entry {
     return true;
   }
 
-  tryReadInt(strict?: bool): i64 {
-    return this.value;
+  tryReadInt(_strict?: bool): Option<i64> {
+    return Option.Some(this.value);
   }
 
   isUint(strict?: bool): bool {
     return !strict && this.value >= 0;
   }
 
-  tryReadUint(strict?: bool): u64 {
-    if (strict) {
-      throw new Error("Trying to read uint from an int in strict mode");
-    } else if (this.value < 0) {
-      throw new Error(
-        "Trying to read uint from a negative in, value is: " + this.value
-      );
+  tryReadUint(strict?: bool): Option<u64> {
+    if (this.isUint(strict)) {
+      return Option.Some(this.value as u64);
     } else {
-      return this.value as u64;
+      return Option.None();
     }
   }
 }
@@ -337,24 +298,20 @@ class UInt extends Entry {
     return !strict && this.value <= (i64.MAX_VALUE as u64);
   }
 
-  tryReadInt(strict?: bool): i64 {
-    if (strict) {
-      throw new Error("Trying to read int from a uint in strict mode");
-    } else if (this.value > (i64.MAX_VALUE as u64)) {
-      throw new Error(
-        "Trying to read int from too large uint, value is: " + this.value
-      );
+  tryReadInt(strict?: bool): Option<i64> {
+    if (this.isInt(strict)) {
+      return Option.Some(this.value as i64);
     } else {
-      return this.value as i64;
+      return Option.None();
     }
   }
 
-  isUint(strict?: bool): bool {
+  isUint(_strict?: bool): bool {
     return true;
   }
 
-  tryReadUint(strict?: bool): u64 {
-    return this.value;
+  tryReadUint(_strict?: bool): Option<u64> {
+    return Option.Some(this.value);
   }
 }
 
@@ -370,8 +327,8 @@ class Float extends Entry {
     return true;
   }
 
-  tryReadFloat(): f64 {
-    return this.value;
+  tryReadFloat(): Option<f64> {
+    return Option.Some(this.value);
   }
 }
 
@@ -387,8 +344,8 @@ class Bool extends Entry {
     return true;
   }
 
-  tryReadBool(): bool {
-    return this.value;
+  tryReadBool(): Option<bool> {
+    return Option.Some(this.value);
   }
 }
 
@@ -416,8 +373,8 @@ class Str extends Entry {
     return true;
   }
 
-  tryReadString(): string {
-    return this.text;
+  tryReadString(): Option<string> {
+    return Option.Some(this.text);
   }
 }
 
@@ -433,8 +390,8 @@ class MapLength extends Entry {
     return true;
   }
 
-  tryReadMapLength(): usize {
-    return this.length;
+  tryReadMapLength(): Option<usize> {
+    return Option.Some(this.length);
   }
 }
 
@@ -450,8 +407,8 @@ class ArrayLength extends Entry {
     return true;
   }
 
-  tryReadArrayLength(): usize {
-    return this.length;
+  tryReadArrayLength(): Option<usize> {
+    return Option.Some(this.length);
   }
 }
 
@@ -467,8 +424,8 @@ class BinData extends Entry {
     return true;
   }
 
-  tryReadBinData(): ArrayBuffer {
-    return this.data;
+  tryReadBinData(): Option<ArrayBuffer> {
+    return Option.Some(this.data);
   }
 }
 
@@ -486,7 +443,7 @@ class ExtData extends Entry {
     return true;
   }
 
-  tryReadExt(): ExtensionData {
-    return new ExtensionData(this.type, this.data);
+  tryReadExt(): Option<ExtensionData> {
+    return Option.Some(new ExtensionData(this.type, this.data));
   }
 }
