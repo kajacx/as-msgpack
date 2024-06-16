@@ -130,27 +130,27 @@ export class EntryReader {
 }
 
 export abstract class Entry {
-  isInt(strict?: bool): bool {
+  isInt(strict: bool = 0): bool {
     return false;
   }
 
-  tryReadInt(_strict?: bool): Option<i64> {
-    return Option.None();
+  tryReadInt(_strict: bool = 0): Option<i64> {
+    return Option.None<i64>();
   }
 
-  readInt(strict?: bool): i64 {
+  readInt(strict: bool = 0): i64 {
     return this.tryReadInt(strict).getOr(0);
   }
 
-  isUint(_strict?: bool): bool {
+  isUint(_strict: bool = 0): bool {
     return false;
   }
 
-  tryReadUint(_strict?: bool): Option<u64> {
-    return Option.None();
+  tryReadUint(_strict: bool = 0): Option<u64> {
+    return Option.None<u64>();
   }
 
-  readUint(strict?: bool): u64 {
+  readUint(strict: bool = 0): u64 {
     return this.tryReadUint(strict).getOr(0);
   }
 
@@ -159,7 +159,7 @@ export abstract class Entry {
   }
 
   tryReadFloat(): Option<f64> {
-    return Option.None();
+    return Option.None<f64>();
   }
 
   readFloat(): f64 {
@@ -179,7 +179,7 @@ export abstract class Entry {
   }
 
   tryReadBool(): Option<bool> {
-    return Option.None();
+    return Option.None<bool>();
   }
 
   readBool(): bool {
@@ -191,7 +191,7 @@ export abstract class Entry {
   }
 
   tryReadString(): Option<string> {
-    return Option.None();
+    return Option.None<string>();
   }
 
   readString(): string {
@@ -203,7 +203,7 @@ export abstract class Entry {
   }
 
   tryReadMapLength(): Option<usize> {
-    return Option.None();
+    return Option.None<usize>();
   }
 
   readMapLength(): usize {
@@ -215,7 +215,7 @@ export abstract class Entry {
   }
 
   tryReadArrayLength(): Option<usize> {
-    return Option.None();
+    return Option.None<usize>();
   }
 
   readArrayLength(): usize {
@@ -227,7 +227,7 @@ export abstract class Entry {
   }
 
   tryReadBinData(): Option<ArrayBuffer> {
-    return Option.None();
+    return Option.None<ArrayBuffer>();
   }
 
   readBinData(): ArrayBuffer {
@@ -239,7 +239,7 @@ export abstract class Entry {
   }
 
   tryReadExt(): Option<ExtensionData> {
-    return Option.None();
+    return Option.None<ExtensionData>();
   }
 
   readExt(): ExtensionData {
@@ -265,23 +265,23 @@ class Int extends Entry {
     this.value = value;
   }
 
-  isInt(strict?: bool): bool {
+  isInt(strict: bool = 0): bool {
     return true;
   }
 
-  tryReadInt(_strict?: bool): Option<i64> {
+  tryReadInt(_strict: bool = 0): Option<i64> {
     return Option.Some(this.value);
   }
 
-  isUint(strict?: bool): bool {
+  isUint(strict: bool = 0): bool {
     return !strict && this.value >= 0;
   }
 
-  tryReadUint(strict?: bool): Option<u64> {
+  tryReadUint(strict: bool = 0): Option<u64> {
     if (this.isUint(strict)) {
       return Option.Some(this.value as u64);
     } else {
-      return Option.None();
+      return Option.None<u64>();
     }
   }
 }
@@ -294,23 +294,23 @@ class UInt extends Entry {
     this.value = value;
   }
 
-  isInt(strict?: bool): bool {
+  isInt(strict: bool = 0): bool {
     return !strict && this.value <= (i64.MAX_VALUE as u64);
   }
 
-  tryReadInt(strict?: bool): Option<i64> {
+  tryReadInt(strict: bool = 0): Option<i64> {
     if (this.isInt(strict)) {
       return Option.Some(this.value as i64);
     } else {
-      return Option.None();
+      return Option.None<i64>();
     }
   }
 
-  isUint(_strict?: bool): bool {
+  isUint(_strict: bool = 0): bool {
     return true;
   }
 
-  tryReadUint(_strict?: bool): Option<u64> {
+  tryReadUint(_strict: bool = 0): Option<u64> {
     return Option.Some(this.value);
   }
 }
