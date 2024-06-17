@@ -11,7 +11,7 @@ export abstract class Option<T> {
 
   abstract getOr(defaultValue: T): T;
 
-  abstract get(): T;
+  abstract get(hint: string | null): T;
 }
 
 class Some<T> extends Option<T> {
@@ -30,7 +30,7 @@ class Some<T> extends Option<T> {
     return this.value;
   }
 
-  get(): T {
+  get(_hint: string | null): T {
     return this.value;
   }
 }
@@ -44,7 +44,11 @@ class None<T> extends Option<T> {
     return defaultValue;
   }
 
-  get(): T {
-    throw new Error("Called get on a None Option");
+  get(hint: string | null): T {
+    if (hint != null) {
+      throw new Error("Called get on a None Option: " + hint);
+    } else {
+      throw new Error("Called get on a None Option");
+    }
   }
 }

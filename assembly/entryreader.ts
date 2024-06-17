@@ -44,7 +44,7 @@ export class EntryReader {
       return new ArrayLength((marker & 0b00001111) as usize);
       // Fix string:    0b101xxxxx
     } else if (marker < 0b11000000) {
-      return new Str(this.readString((marker & 0x00011111) as usize));
+      return new Str(this.readString((marker & 0b00011111) as usize));
     } else if (marker == 0b11000000) {
       return new Null();
     } else if (marker == 0b11000001) {
@@ -245,6 +245,8 @@ export abstract class Entry {
   readExt(): ExtensionData {
     return this.tryReadExt().getOr(new ExtensionData(0, new ArrayBuffer(0)));
   }
+
+  abstract toString(): string;
 }
 
 export class ExtensionData {
@@ -284,6 +286,10 @@ class Int extends Entry {
       return Option.None<u64>();
     }
   }
+
+  toString(): string {
+    return "Int: " + this.value.toString();
+  }
 }
 
 class UInt extends Entry {
@@ -313,6 +319,10 @@ class UInt extends Entry {
   tryReadUint(_strict: bool = 0): Option<u64> {
     return Option.Some(this.value);
   }
+
+  toString(): string {
+    return "Uint: " + this.value.toString();
+  }
 }
 
 class Float extends Entry {
@@ -329,6 +339,10 @@ class Float extends Entry {
 
   tryReadFloat(): Option<f64> {
     return Option.Some(this.value);
+  }
+
+  toString(): string {
+    return "Float: " + this.value.toString();
   }
 }
 
@@ -347,17 +361,29 @@ class Bool extends Entry {
   tryReadBool(): Option<bool> {
     return Option.Some(this.value);
   }
+
+  toString(): string {
+    return "Bool: " + this.value.toString();
+  }
 }
 
 class Null extends Entry {
   isNull(): bool {
     return true;
   }
+
+  toString(): string {
+    return "Null";
+  }
 }
 
 class Unused extends Entry {
   isUnused(): bool {
     return true;
+  }
+
+  toString(): string {
+    return "Unused";
   }
 }
 
@@ -376,6 +402,10 @@ class Str extends Entry {
   tryReadString(): Option<string> {
     return Option.Some(this.text);
   }
+
+  toString(): string {
+    return "String: " + this.text;
+  }
 }
 
 class MapLength extends Entry {
@@ -392,6 +422,10 @@ class MapLength extends Entry {
 
   tryReadMapLength(): Option<usize> {
     return Option.Some(this.length);
+  }
+
+  toString(): string {
+    return "MapLength: " + this.length.toString();
   }
 }
 
@@ -410,6 +444,10 @@ class ArrayLength extends Entry {
   tryReadArrayLength(): Option<usize> {
     return Option.Some(this.length);
   }
+
+  toString(): string {
+    return "ArrayLength: " + this.length.toString();
+  }
 }
 
 class BinData extends Entry {
@@ -426,6 +464,10 @@ class BinData extends Entry {
 
   tryReadBinData(): Option<ArrayBuffer> {
     return Option.Some(this.data);
+  }
+
+  toString(): string {
+    return "BinData: " + this.data.toString();
   }
 }
 
@@ -445,5 +487,9 @@ class ExtData extends Entry {
 
   tryReadExt(): Option<ExtensionData> {
     return Option.Some(new ExtensionData(this.type, this.data));
+  }
+
+  toString(): string {
+    return "ExtData: " + this.type.toString() + ", " + this.data.toString();
   }
 }
