@@ -59,61 +59,61 @@ export class EntryReader {
       return new BinData(this.readBinData(this.reader.getUint16() as usize));
     } else if (marker == 0b11000110) {
       return new BinData(this.readBinData(this.reader.getUint32() as usize));
-    } else if (marker == 0b10100111) {
+    } else if (marker == 0b11000111) {
       let length = this.reader.getUint8() as usize;
       let type = this.reader.getUint8();
       return new ExtData(type, this.readBinData(length));
-    } else if (marker == 0b10101000) {
+    } else if (marker == 0b11001000) {
       let length = this.reader.getUint16() as usize;
       let type = this.reader.getUint8();
       return new ExtData(type, this.readBinData(length));
-    } else if (marker == 0b10101001) {
+    } else if (marker == 0b11001001) {
       let length = this.reader.getUint32() as usize;
       let type = this.reader.getUint8();
       return new ExtData(type, this.readBinData(length));
-    } else if (marker == 0b10101010) {
+    } else if (marker == 0b11001010) {
       return new Float(this.reader.getFloat32() as f64);
-    } else if (marker == 0b10101011) {
+    } else if (marker == 0b11001011) {
       return new Float(this.reader.getFloat64());
-    } else if (marker == 0b10101100) {
+    } else if (marker == 0b11001100) {
       return new UInt(this.reader.getUint8() as u64);
-    } else if (marker == 0b10101101) {
+    } else if (marker == 0b11001101) {
       return new UInt(this.reader.getUint16() as u64);
-    } else if (marker == 0b10101110) {
+    } else if (marker == 0b11001110) {
       return new UInt(this.reader.getUint32() as u64);
-    } else if (marker == 0b10101111) {
+    } else if (marker == 0b11001111) {
       return new UInt(this.reader.getUint64());
-    } else if (marker == 0b10110000) {
+    } else if (marker == 0b11010000) {
       return new Int(this.reader.getInt8() as i64);
-    } else if (marker == 0b10110001) {
+    } else if (marker == 0b11010001) {
       return new Int(this.reader.getInt16() as i64);
-    } else if (marker == 0b10110010) {
+    } else if (marker == 0b11010010) {
       return new Int(this.reader.getInt32() as i64);
-    } else if (marker == 0b10110011) {
+    } else if (marker == 0b11010011) {
       return new Int(this.reader.getInt64());
-    } else if (marker == 0b10110100) {
+    } else if (marker == 0b11010100) {
       return new ExtData(this.reader.getUint8(), this.readBinData(1));
-    } else if (marker == 0b10110101) {
+    } else if (marker == 0b11010101) {
       return new ExtData(this.reader.getUint8(), this.readBinData(2));
-    } else if (marker == 0b10110110) {
+    } else if (marker == 0b11010110) {
       return new ExtData(this.reader.getUint8(), this.readBinData(4));
-    } else if (marker == 0b10110111) {
+    } else if (marker == 0b11010111) {
       return new ExtData(this.reader.getUint8(), this.readBinData(8));
-    } else if (marker == 0b10111000) {
+    } else if (marker == 0b11011000) {
       return new ExtData(this.reader.getUint8(), this.readBinData(16));
-    } else if (marker == 0b10111001) {
+    } else if (marker == 0b11011001) {
       return new Str(this.readString(this.reader.getUint8() as usize));
-    } else if (marker == 0b10111010) {
+    } else if (marker == 0b11011010) {
       return new Str(this.readString(this.reader.getUint16() as usize));
-    } else if (marker == 0b10111011) {
+    } else if (marker == 0b11011011) {
       return new Str(this.readString(this.reader.getUint32() as usize));
-    } else if (marker == 0b10111100) {
+    } else if (marker == 0b11011100) {
       return new ArrayLength(this.reader.getUint16() as usize);
-    } else if (marker == 0b10111101) {
+    } else if (marker == 0b11011101) {
       return new ArrayLength(this.reader.getUint32() as usize);
-    } else if (marker == 0b10111110) {
+    } else if (marker == 0b11011110) {
       return new MapLength(this.reader.getUint16() as usize);
-    } else if (marker == 0b10111111) {
+    } else if (marker == 0b11011111) {
       return new MapLength(this.reader.getUint32() as usize);
     } else {
       return new Int(marker as i8 as i64);
